@@ -1,48 +1,48 @@
-# Forma simple y pr·ctica, quÈ meter en cada capa y por quÈ 
-## suficientemente concreto para implementarlo en tu soluciÛn.
+Ôªø# Forma simple y pr√°ctica, qu√© meter en cada capa y por qu√© 
+## suficientemente concreto para implementarlo en tu soluci√≥n.
 
 ### Objetivo del proyecto (resumen)
-- Permitir m˙ltiples salas de chat (`ChatRoom`) sin base de datos por ahora.
-- Usar patrÛn Repositorio para poder cambiar a BD m·s adelante.
+- Permitir m√∫ltiples salas de chat (`ChatRoom`) sin base de datos por ahora.
+- Usar patr√≥n Repositorio para poder cambiar a BD m√°s adelante.
 - Para enviar mensajes, el usuario debe existir previamente en la sala.
 - Seguir Clean Architecture y principios DDD (entidades ricas y agregados simples).
 
 ---
 
-### Domain (n˙cleo de la lÛgica)
-- QuÈ poner: entidades, value objects, reglas de negocio puras, excepciones de dominio, interfaces de repositorio.
+### Domain (n√∫cleo de la l√≥gica)
+- Qu√© poner: entidades, value objects, reglas de negocio puras, excepciones de dominio, interfaces de repositorio.
 - Entidades/agregado:
-  - `ChatRoom` (Aggregate Root): contiene `Usuarios` y `Mensajes`.
-  - `Usuario` (entidad): identidad por `UserName` dentro de una sala.
-  - `Mensaje` (entidad): referencia a `Usuario`, `Contenido`, `FechaEnvio`.
+  - `ChatRoom` (Aggregate Root): contiene `Usuarios` y `Mensajes`. Debe tener `Id` (Guid) como identidad de la sala.
+  - `Usuario` (entidad): identidad por `UserName` dentro de una sala (el `UserName` es su identificador; no a√±adir otro Id).
+  - `Mensaje` (entidad): `Id` (Guid) para trazabilidad, referencia a `Usuario`, `Contenido`, `FechaEnvio`.
 - Reglas clave (invariantes):
   - No se pueden duplicar usuarios por `UserName` dentro de una sala.
   - No se puede enviar mensaje si el usuario no existe en la sala.
-  - El contenido del mensaje no puede ser vacÌo.
-- Interfaz repositorio: `IChatRepository` (contrato, sin lÛgica) para trabajar con `ChatRoom`.
+  - El contenido del mensaje no puede ser vac√≠o.
+- Interfaz repositorio: `IChatRepository` (contrato, sin l√≥gica) para trabajar con `ChatRoom`.
 
-### Application (casos de uso / orquestaciÛn)
-- QuÈ poner: DTOs, contratos de servicios (`IChatService`), validaciÛn de entrada, orquestaciÛn de casos de uso.
-- Casos de uso mÌnimos:
-  - Crear sala: `CreateChatRoomAsync`.
-  - Listar salas: `ListChatRoomsAsync` (opcional pero recomendable).
-  - Obtener sala: `GetChatRoomAsync`.
-  - AÒadir usuario a sala: `AddUserAsync`.
-  - Enviar mensaje: `SendMessageAsync` (requiere usuario existente).
+### Application (casos de uso / orquestaci√≥n)
+- Qu√© poner: DTOs, contratos de servicios (`IChatService`), validaci√≥n de entrada, orquestaci√≥n de casos de uso.
+- Casos de uso m√≠nimos:
+  - Crear sala: `CreateChatRoomAsync` (devuelve `Id` Guid de la sala).
+  - Listar salas: `ListChatRoomsAsync` (devuelve lista de `Id` Guid).
+  - Obtener sala: `GetChatRoomAsync` (devuelve DTO con `ChatId` Guid).
+  - A√±adir usuario a sala: `AddUserAsync`.
+  - Enviar mensaje: `SendMessageAsync` (requiere usuario existente, devuelve DTO con `Id` Guid).
 - Mapear entre entidades y DTOs (manual u `AutoMapper`, opcional ahora).
 
 ### Infrastructure (implementaciones concretas)
-- QuÈ poner: `InMemoryChatRepository` (sin BD) y `ChatService` (implementaciÛn de `IChatService`).
-- `InMemoryChatRepository` debe soportar m˙ltiples salas y ser seguro para acceso concurrente b·sico.
-- M·s adelante podr·s reemplazar por `EfChatRepository` + `ChatDbContext`.
+- Qu√© poner: `InMemoryChatRepository` (sin BD) y `ChatService` (implementaci√≥n de `IChatService`).
+- `InMemoryChatRepository` debe soportar m√∫ltiples salas y ser seguro para acceso concurrente b√°sico.
+- M√°s adelante podr√°s reemplazar por `EfChatRepository` + `ChatDbContext`.
 
-### Api (exposiciÛn HTTP)
-- Controlador `ChatController` con endpoints REST mÌnimos:
-  - `POST /api/chats` -> crea una sala (devuelve id).
-  - `GET /api/chats` -> lista salas.
-  - `GET /api/chats/{id}` -> obtiene sala por id.
-  - `POST /api/chats/{id}/users` -> aÒade usuario a sala.
-  - `POST /api/chats/{id}/messages` -> envÌa mensaje (usuario debe existir).
+### Api (exposici√≥n HTTP)
+- `ChatController` con endpoints REST m√≠nimos:
+  - `POST /api/chats` -> crea una sala (devuelve `{ id: string }` con el Guid).
+  - `GET /api/chats` -> lista `{ ids: string[] }` o una lista simple de `string` (Guids).
+  - `GET /api/chats/{id}` -> obtiene sala por id (devuelve `ChatDto` con `ChatId` Guid).
+  - `POST /api/chats/{id}/users` -> a√±ade usuario a sala (el `UserName` identifica al usuario).
+  - `POST /api/chats/{id}/messages` -> env√≠a mensaje (devuelve `MensajeDto` con `Id` Guid).
 
 ### Dependencias entre proyectos (reglas)
 - `Chat.Domain` <- aislado.
@@ -50,56 +50,67 @@
 - `Chat.Infrastructure` -> `Chat.Domain`, `Chat.Application`.
 - `Chat.Api` -> `Chat.Application`, `Chat.Infrastructure`.
 
-### QuÈ es necesario ahora (imprescindible)
+### Qu√© es necesario ahora (imprescindible)
 1) Domain
 - Hacer `public` las entidades (`Usuario`, `Mensaje`, `ChatRoom`).
-- Inicializar colecciones en `ChatRoom` (listas vacÌas por defecto).
-- Definir interfaz `IChatRepository` con mÈtodos necesarios (ver firmas abajo).
-- (Opcional recomendado) Agregar mÈtodos de dominio a `ChatRoom` para validar invariantes: `AddUser`, `AddMessage` (solo firmas si prefieres implementar despuÈs).
+- Inicializar colecciones en `ChatRoom` (listas vac√≠as por defecto).
+- Definir interfaz `IChatRepository` con m√©todos necesarios (ver firmas abajo).
+- (Opcional recomendado) Agregar m√©todos de dominio a `ChatRoom` para validar invariantes: `AddUser`, `AddMessage` (solo firmas si prefieres implementar despu√©s).
+- IDs: `ChatRoom.Id` (Guid) y `Mensaje.Id` (Guid). `Usuario` se identifica por `UserName` (no a√±adir otro Id).
 
 2) Application
 - Crear DTOs: `UsuarioDto`, `MensajeDto`, `ChatDto`, `ChatRoomDto` (si distingues `Chat` vs `ChatRoom`).
 - Definir `IChatService` con los casos de uso descritos (firmas).
+- IDs en DTOs: incluir `ChatId` (Guid) en `ChatDto`, `Id` (Guid) en `MensajeDto`. No incluir `Usuario.Id` adicional (usar `UserName`).
 
 3) Infrastructure
-- Implementar `InMemoryChatRepository` (sin BD) con almacenamiento en memoria para m˙ltiples salas.
+- Implementar `InMemoryChatRepository` (sin BD) con almacenamiento en memoria para m√∫ltiples salas.
 - Implementar `ChatService` usando el repositorio y aplicando las reglas (no enviar mensajes si usuario no existe).
+- Generaci√≥n de IDs:
+  - `ChatRoom.Id`: `Guid.NewGuid()`.
+  - `Mensaje.Id`: `Guid.NewGuid()`.
 - Registrar en DI (repositorio + servicio).
 
 4) Api
-- Crear `ChatController` con los endpoints REST mÌnimos arriba.
+- Crear `ChatController` con los endpoints REST m√≠nimos arriba.
+- Respuestas deben incluir IDs donde aplique (p. ej. `201 Created` con `Location` a `/api/chats/{id}` y el `id` en el cuerpo).
 
-### QuÈ NO es necesario ahora (posponer)
+### Qu√© NO es necesario ahora (posponer)
 - EF Core, migraciones, `DbContext` (posponer hasta querer BD).
-- AutenticaciÛn/autorizaciÛn.
-- AutoMapper/FluentValidation (˙tiles pero prescindibles al inicio).
-- PaginaciÛn y filtros de mensajes (aÒadir m·s adelante).
+- Autenticaci√≥n/autorizaci√≥n.
+- AutoMapper/FluentValidation (√∫tiles pero prescindibles al inicio).
+- Paginaci√≥n y filtros de mensajes (a√±adir m√°s adelante).
 
 ---
 
-## Checklist pr·ctica (paso a paso)
+## Checklist pr√°ctica (paso a paso)
 1. Domain
    - Asegurar `public` en `Chat.Domain\model\Usuario.cs`, `Mensaje.cs`, `ChatRoom.cs`.
    - Inicializar listas en `ChatRoom`.
    - Crear `Chat.Domain\repositories\IChatRepository.cs` (firmas abajo).
+   - IDs: confirmar `ChatRoom.Id` (Guid) y `Mensaje.Id` (Guid).
 2. Application
    - Crear `Chat.Application\DTOs`: `UsuarioDto`, `MensajeDto`, `ChatDto` (y/o `ChatRoomDto`).
+   - A√±adir campos de IDs en DTOs: `ChatDto.ChatId` (Guid), `MensajeDto.Id` (Guid).
    - Crear `Chat.Application\Interfaces\IChatService.cs` con firmas abajo.
 3. Infrastructure
-   - Crear `Chat.Infrastructure\Repositories\InMemoryChatRepository.cs` con soporte para m˙ltiples salas (stubs aceptables si implementar·s despuÈs).
+   - Crear `Chat.Infrastructure\Repositories\InMemoryChatRepository.cs` con soporte para m√∫ltiples salas.
    - Crear `Chat.Infrastructure\Services\ChatService.cs` que use el repositorio.
+   - Generaci√≥n de IDs: `Guid.NewGuid()` para `ChatRoom.Id` y `Mensaje.Id`.
    - Registrar en `Chat.Api\Program.cs`: `IChatRepository` e `IChatService`.
 4. Api
    - Crear `Chat.Api\Controllers\ChatController.cs` con endpoints REST.
+   - Asegurar que las respuestas incluyen IDs (`201 Created` + Location).
 5. Probar
-   - Crear sala -> aÒadir usuario -> enviar mensaje -> obtener sala.
+   - Crear sala -> a√±adir usuario -> enviar mensaje -> obtener sala.
 
 ---
 
-## Firmas de contratos (quÈ deben hacer, no cÛmo)
+## Firmas de contratos (qu√© deben hacer, no c√≥mo)
 
-### Repositorio en Domain (`Chat.Domain\repositories\IChatRepository.cs`)
+### Repositorio en Domain (`Chat.Domain/repositories/IChatRepository.cs`)
 ```csharp
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Chat.Domain.model;
@@ -112,22 +123,22 @@ namespace Chat.Domain.repositories
         Task<ChatRoom> CreateChatAsync();
 
         // Devuelve la sala por id o null si no existe
-        Task<ChatRoom?> GetChatAsync(int id);
+        Task<ChatRoom?> GetChatAsync(Guid id);
 
-        // Devuelve todas las salas (ids y/o info b·sica)
+        // Devuelve todas las salas (ids y/o info b√°sica)
         Task<IEnumerable<ChatRoom>> ListChatsAsync();
 
         // Devuelve los usuarios de una sala
-        Task<IEnumerable<Usuario>> GetUsuariosAsync(int chatId);
+        Task<IEnumerable<Usuario>> GetUsuariosAsync(Guid chatId);
 
         // Devuelve los mensajes de una sala
-        Task<IEnumerable<Mensaje>> GetMensajesAsync(int chatId);
+        Task<IEnumerable<Mensaje>> GetMensajesAsync(Guid chatId);
 
-        // AÒade un usuario a la sala (no duplicar por UserName)
-        Task AddUsuarioAsync(int chatId, Usuario usuario);
+        // A√±ade un usuario a la sala (no duplicar por UserName)
+        Task AddUsuarioAsync(Guid chatId, Usuario usuario);
 
-        // AÒade un mensaje a la sala (el usuario debe existir)
-        Task AddMensajeAsync(int chatId, Mensaje mensaje);
+        // A√±ade un mensaje a la sala (el usuario debe existir)
+        Task AddMensajeAsync(Guid chatId, Mensaje mensaje);
 
         // Persiste cambios si aplica (en memoria: no-op)
         Task SaveChangesAsync();
@@ -135,8 +146,9 @@ namespace Chat.Domain.repositories
 }
 ```
 
-### Servicio de aplicaciÛn (`Chat.Application\Interfaces\IChatService.cs`)
+### Servicio de aplicaci√≥n (`Chat.Application/Interfaces/IChatService.cs`)
 ```csharp
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Chat.Application.DTOs;
@@ -145,20 +157,20 @@ namespace Chat.Application.Interfaces
 {
     public interface IChatService
     {
-        // Crea una sala y devuelve su id o DTO
-        Task<int> CreateChatRoomAsync();
+        // Crea una sala y devuelve su id
+        Task<Guid> CreateChatRoomAsync();
 
-        // Lista salas (ids o info b·sica)
-        Task<IEnumerable<int>> ListChatRoomsAsync();
+        // Lista ids de salas
+        Task<IEnumerable<Guid>> ListChatRoomsAsync();
 
         // Devuelve los datos de una sala
-        Task<ChatDto> GetChatRoomAsync(int chatId);
+        Task<ChatDto> GetChatRoomAsync(Guid chatId);
 
-        // AÒade un usuario a una sala
-        Task AddUserAsync(int chatId, UsuarioDto usuario);
+        // A√±ade un usuario a una sala
+        Task AddUserAsync(Guid chatId, UsuarioDto usuario);
 
-        // EnvÌa un mensaje (usuario debe existir previamente)
-        Task<MensajeDto> SendMessageAsync(int chatId, MensajeDto mensaje);
+        // Env√≠a un mensaje (usuario debe existir previamente)
+        Task<MensajeDto> SendMessageAsync(Guid chatId, MensajeDto mensaje);
     }
 }
 ```
@@ -170,22 +182,22 @@ namespace Chat.Application.Interfaces
 
 ---
 
-## Pautas de implementaciÛn (alto nivel)
+## Pautas de implementaci√≥n (alto nivel)
 - `InMemoryChatRepository`
-  - Mantener un diccionario en memoria `chatId -> ChatRoom` (p.ej. `ConcurrentDictionary<int, ChatRoom>`).
-  - Asignar ids incrementales a nuevas salas.
-  - Asegurar que aÒadir usuario no lo duplique por `UserName`.
-  - Al aÒadir mensaje, verificar que el usuario exista; si no, fallar (o decide si auto-creas usuario; la guÌa recomienda requerir alta previa).
+  - Diccionario `chatId -> ChatRoom` (p. ej. `ConcurrentDictionary<Guid, ChatRoom>`).
+  - Ids `Guid` para nuevas salas (`ChatRoom.Id = Guid.NewGuid()`).
+  - A√±adir usuario sin duplicar por `UserName`.
+  - Al a√±adir mensaje, exigir usuario existente y asignar `Mensaje.Id = Guid.NewGuid()`.
 - `ChatService`
-  - Validar entradas (id > 0, `UserName` no vacÌo, `Contenido` no vacÌo).
-  - Orquestar llamadas al repositorio y mapear a DTOs.
+  - Validar entradas: `chatId != Guid.Empty`, `UserName` y `Contenido` no vac√≠os.
+  - Orquestar repositorio y mapear a DTOs (asegurar `ChatDto.ChatId` Guid, `MensajeDto.Id` Guid).
 - `ChatController`
-  - Exponer endpoints REST; retornar 404 si la sala no existe; 400 si validaciones fallan.
+  - Responder 404 si la sala no existe y 400 si la validaci√≥n falla.
+  - En `POST /api/chats`, devolver `201 Created` con `Location: /api/chats/{id}` (Guid).
 
 ---
 
-## Registro en DI (`Chat.Api\Program.cs`)
-- Registrar repositorio e implementaciÛn del servicio:
+## Registro en DI (`Chat.Api/Program.cs`)
 ```csharp
 builder.Services.AddSingleton<IChatRepository, InMemoryChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -193,14 +205,6 @@ builder.Services.AddScoped<IChatService, ChatService>();
 
 ---
 
-## Opcionales (aÒadir m·s adelante)
-- Persistencia real con EF Core (`ChatDbContext`, `EfChatRepository`).
-- `AutoMapper` para mapeos.
-- `FluentValidation` para validaciones.
-- AutenticaciÛn/autorizaciÛn.
-- PaginaciÛn/filtros en consultas de mensajes.
-
----
 ## Estructura de carpetas y proyectos
 ```mermaid
 graph TD
@@ -238,7 +242,102 @@ graph TD
 
 ---
 
-## Notas DDD/Clean Architecture
-- `ChatRoom` es el agregado principal; manten las reglas dentro de la entidad/agregado cuando sea posible.
-- Los controladores no contienen lÛgica de negocio; delegan al servicio.
-- El repositorio oculta la persistencia y permite cambiar a BD sin tocar Application.
+## Mapa de llamadas (end-to-end)
+
+### Dependencias (alto nivel)
+```mermaid
+graph TD
+  AP["Chat.Api (Controllers)"] --> A["Chat.Application (IChatService)"]
+  A --> I["Chat.Infrastructure (ChatService)"]
+  I --> R["Infra Repo (InMemory/Ef) implementa IChatRepository"]
+  R --> D["Chat.Domain (Entidades + IChatRepository)"]
+```
+
+- `ChatController` llama a `IChatService`.
+- `ChatService` (Infrastructure) orquesta y usa `IChatRepository`.
+- El repositorio trabaja con entidades del dominio (`ChatRoom`, `Usuario`, `Mensaje`).
+
+### Flujos por caso de uso
+
+1) Crear sala: `POST /api/chats`
+```mermaid
+sequenceDiagram
+  participant C as Controller
+  participant S as IChatService (ChatService)
+  participant R as IChatRepository
+  participant D as ChatRoom (Domain)
+
+  C->>S: CreateChatRoomAsync()
+  S->>R: CreateChatAsync()
+  R-->>S: ChatRoom (Id asignado)
+  S-->>C: Id (Guid) de la sala creada
+```
+
+2) Listar salas: `GET /api/chats`
+```mermaid
+sequenceDiagram
+  participant C as Controller
+  participant S as IChatService (ChatService)
+  participant R as IChatRepository
+
+  C->>S: ListChatRoomsAsync()
+  S->>R: ListChatsAsync()
+  R-->>S: IEnumerable<ChatRoom>
+  S-->>C: IEnumerable<Guid>
+```
+
+3) Obtener sala: `GET /api/chats/{id}`
+```mermaid
+sequenceDiagram
+  participant C as Controller
+  participant S as IChatService (ChatService)
+  participant R as IChatRepository
+
+  C->>S: GetChatRoomAsync(chatId: Guid)
+  S->>R: GetChatAsync(chatId: Guid)
+  R-->>S: ChatRoom? (null si no existe)
+  S-->>C: ChatDto (404 si null)
+```
+
+4) A√±adir usuario: `POST /api/chats/{id}/users`
+```mermaid
+sequenceDiagram
+  participant C as Controller
+  participant S as IChatService (ChatService)
+  participant R as IChatRepository
+  participant D as ChatRoom (Domain)
+
+  C->>S: AddUserAsync(chatId: Guid, UsuarioDto)
+  S->>R: GetChatAsync(chatId: Guid)
+  R-->>S: ChatRoom (o null->404)
+  S->>D: ChatRoom.AddUser(Usuario)
+  S->>R: AddUsuarioAsync(chatId: Guid, Usuario)
+  S->>R: SaveChangesAsync()
+  S-->>C: 204 NoContent (o 409 si ya exist√≠a)
+```
+
+5) Enviar mensaje: `POST /api/chats/{id}/messages`
+```mermaid
+sequenceDiagram
+  participant C as Controller
+  participant S as IChatService (ChatService)
+  participant R as IChatRepository
+  participant D as ChatRoom (Domain)
+
+  C->>S: SendMessageAsync(chatId: Guid, MensajeDto)
+  S->>R: GetChatAsync(chatId: Guid)
+  R-->>S: ChatRoom (o null->404)
+  S->>D: validar que Usuario existe en ChatRoom
+  alt usuario no existe
+    S-->>C: 400/409 (seg√∫n pol√≠tica)
+  else usuario existe
+    S->>D: ChatRoom.AddMessage(Mensaje)
+    S->>R: AddMensajeAsync(chatId: Guid, Mensaje)
+    S->>R: SaveChangesAsync()
+    S-->>C: MensajeDto (201 Created)
+  end
+```
+
+Notas:
+- La validaci√≥n de reglas (no duplicados, usuario requerido) vive en el agregado `ChatRoom` y se orquesta desde `IChatService` antes de persistir.
+- Al cambiar la implementaci√≥n del repositorio (in-memory ‚Üí EF) no se toca `Chat.Application` ni `Chat.Api`.

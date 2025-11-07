@@ -28,7 +28,7 @@ namespace Chat.Domain.Repositories
         Task<IEnumerable<Mensaje>> GetMensajesAsync(Guid chatId);
 
         /// <summary>Añade un usuario al chat (no duplica si ya existe).</summary>
-        Task AddUsuarioAsync(Guid chatId, Usuario usuario);
+        Task AddUsuarioAsync(Guid chatId, string userName);
 
         /// <summary>Añade un mensaje al chat.</summary>
         Task AddMensajeAsync(Guid chatId, Mensaje mensaje);

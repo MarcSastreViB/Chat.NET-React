@@ -10,6 +10,7 @@ namespace Chat.Domain.model
     {
         public string userName { get; set; } = string.Empty;
         public byte[] fotoPerfil { get; set; } = Array.Empty<byte>();
+        public List<ChatRoom> rooms { get; set; } = new();
         public Usuario() { }
 
         public bool Equals(Usuario? other)
